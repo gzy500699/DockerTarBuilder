@@ -1,9 +1,11 @@
-name: Build Docker Image
+name: Build Docker Image AMD64
 
 on:
   push:
     branches:
       - main
+
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,22 +15,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker Image
         run: |
-          docker build \
-            -t my-image:latest \
+          docker buildx build \
+            --platform linux/amd64 \
+            -t my-app:latest \
+            --load \
             .
 
       - name: Save Docker Image
         run: |
-          docker save my-image:latest -o my-image.tar
+          VERSION=$(date +%Y%m%d-%H%M%S)
 
-      - name: Upload image artifact
+          docker save \
+            my-app:latest \
+            -o my-app-${VERSION}.tar
+
+      - name: Compress Image
+        run: |
+          gzip my-app-*.tar
+
+      - name: Upload Docker Image
         uses: actions/upload-artifact@v4
         with:
-          name: my-image
-          path: my-image.tar
-          retention-days: 7
+          name: docker-image-amd64
+          path: "*.tar.gz"
