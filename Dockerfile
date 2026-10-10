@@ -47,7 +47,7 @@ COPY --from=source-bundle /out/minio-corresponding-source.tar.gz /
 # =========================
 # Runtime image
 # =========================
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim AS runtime
 
 # 安装运行依赖
 RUN apt-get update && \
