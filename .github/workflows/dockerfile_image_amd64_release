@@ -1,45 +1,46 @@
-name: Build Docker Image AMD64
+name: Dockerfile Image AMD64 Release
 
 on:
-  push:
-    branches:
-      - main
-
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      IMAGE_NAME: smartoam/minio:latest
+      TAR_NAME: smartoam-minio-amd64.tar.gz
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Docker Buildx
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
 
       - name: Build Docker Image
         run: |
-          docker buildx build \
+          docker build \
             --platform linux/amd64 \
-            -t my-app:latest \
-            --load \
-            .
+            -t $IMAGE_NAME .
+
 
       - name: Save Docker Image
         run: |
-          VERSION=$(date +%Y%m%d-%H%M%S)
+          docker save $IMAGE_NAME -o image.tar
+          gzip -c image.tar > $TAR_NAME
+          rm -f image.tar
 
-          docker save \
-            my-app:latest \
-            -o my-app-${VERSION}.tar
 
-      - name: Compress Image
-        run: |
-          gzip my-app-*.tar
-
-      - name: Upload Docker Image
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: docker-image-amd64
-          path: "*.tar.gz"
+          tag_name: smartoam-minio-latest
+          name: smartoam/minio latest AMD64
+          files: |
+            ${{ env.TAR_NAME }}
